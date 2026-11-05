@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WhoOwes — split expenses with friends</title>
+<meta name="description" content="Split shared expenses for trips, roommates and dinners.">
+<meta name="theme-color" content="#F5F1EA">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WhoOwes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F5F1EA;--card:#FFFFFF;--ink:#1C1A17;--muted:#77706A;--line:#E7E0D6;--accent:#0F6E63;--accent2:#E2F1EE;--pos:#177245;--neg:#B9461B;--warnbg:#FCEBDD;--okbg:#E3F2E8;--r:18px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:16px;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:max(14px,env(safe-area-inset-top)) 18px 14px;background:rgba(245,241,234,.94);backdrop-filter:blur(8px);border-bottom:1px solid transparent}
+.top.bordered{border-bottom-color:var(--line)}
+.brand{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;display:flex;align-items:center;gap:8px;flex:1}
+.logo{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--accent);color:#fff;font-size:18px}
+.iconbtn{border:0;background:var(--card);height:38px;min-width:38px;padding:0 10px;border-radius:12px;font-size:15px;font-weight:700;box-shadow:0 1px 0 var(--line);display:inline-flex;align-items:center;gap:6px}
+.title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrap{max-width:560px;margin:0 auto;padding:6px 16px calc(120px + env(safe-area-inset-bottom))}
+.hero h1{font-family:'Space Grotesk',sans-serif;font-size:34px;line-height:1.05;margin:18px 0 8px;letter-spacing:-.02em}
+.hero p{color:var(--muted);margin:0 0 22px;line-height:1.45}
+.card{background:var(--card);border-radius:var(--r);box-shadow:0 1px 0 var(--line),0 6px 24px -18px rgba(60,40,10,.35)}
+.list{display:flex;flex-direction:column;gap:10px}
+.gcard{display:flex;align-items:center;gap:12px;padding:14px;border:0;text-align:left;width:100%}
+.gav{width:46px;height:46px;border-radius:14px;background:var(--accent2);color:var(--accent);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;flex:none}
+.gmain{flex:1;min-width:0}.gname{font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.muted{color:var(--muted);font-size:14px}
+.pill{font-size:12px;font-weight:700;padding:5px 9px;border-radius:99px;white-space:nowrap}
+.pill.warn{background:var(--warnbg);color:var(--neg)}.pill.ok{background:var(--okbg);color:var(--pos)}.pill.plain{background:#F1EBE2;color:var(--muted)}
+.empty{padding:28px 22px;text-align:center;color:var(--muted)}.empty .big{font-size:34px}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom));z-index:6;border:0;background:var(--ink);color:#fff;font-weight:700;padding:15px 24px;border-radius:99px;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);font-size:16px}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 14px}
+.stat{padding:14px}.stat .k{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}.stat .v{font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:700;margin-top:4px}
+.tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:12px;scrollbar-width:none}
+.tab{border:0;background:transparent;padding:9px 12px;font-size:15px;border-radius:99px;font-weight:700;color:var(--muted);white-space:nowrap}
+.tab.on{background:var(--ink);color:#fff}
+.rows{padding:4px 0}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;background:none;width:100%;text-align:left;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.ico{width:40px;height:40px;border-radius:12px;background:#F3EEE6;display:grid;place-items:center;font-size:19px;flex:none}
+.rmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rtitle{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ramt{font-weight:700;text-align:right;white-space:nowrap;display:flex;flex-direction:column;gap:2px}
+.ramt small{font-weight:500;font-size:12px}
+.row.pay .ico{background:var(--okbg)}.row.pay .rtitle{color:var(--pos)}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.dayh{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:14px 4px 6px}
+.bal{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line)}.bal:last-child{border-bottom:0}
+.av{width:36px;height:36px;border-radius:50%;background:var(--accent2);color:var(--accent);display:grid;place-items:center;font-weight:700;flex:none}
+.you{font-size:11px;font-weight:700;background:var(--ink);color:#fff;padding:2px 7px;border-radius:99px;margin-left:6px;vertical-align:2px}
+.bar{height:6px;border-radius:9px;background:#EFE9DF;margin-top:6px;overflow:hidden}.bar b{display:block;height:100%;border-radius:9px}
+.xfer{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--line)}.xfer:last-child{border-bottom:0}
+.xfer .who{flex:1;min-width:0;line-height:1.35}
+.btn{border:0;border-radius:13px;padding:12px 16px;font-weight:700}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.ghost{background:#F1EBE2}
+.btn.small{padding:8px 12px;font-size:14px;border-radius:11px}
+.btn.danger{color:var(--neg)}
+.btn.wide{width:100%;margin-top:12px}
+.note{padding:16px;color:var(--muted);text-align:center;line-height:1.45}
+.whoami{padding:14px;margin-bottom:12px;border:2px solid var(--accent)}
+.whoami p{margin:0 0 10px;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:0;background:var(--accent2);color:var(--accent);font-weight:700;padding:9px 14px;border-radius:99px}
+.section{margin-top:18px}.section h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px 4px}
+.inline{display:flex;gap:8px;padding:12px}.inline input{flex:1}
+.overlay{position:fixed;inset:0;z-index:20;background:rgba(28,26,23,.42);display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:8px 18px calc(20px + env(safe-area-inset-bottom));animation:up .2s ease-out}
+.grab{width:40px;height:5px;border-radius:9px;background:#D7CFC4;margin:4px auto 10px}
+.sheet h2{font-family:'Space Grotesk',sans-serif;margin:4px 0 14px;font-size:22px}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}@keyframes fade{from{opacity:0}}
+.fld{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}.fld>span{font-size:13px;font-weight:700;color:var(--muted)}
+input,select,textarea{background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:12px 13px;width:100%;outline:none;min-width:0;font-size:16px}
+textarea{resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex:none;padding:0}
+.two{display:grid;grid-template-columns:1.2fr 1fr;gap:10px}
+.segs{display:flex;background:#ECE5DA;border-radius:13px;padding:4px;gap:4px}
+.seg{flex:1;border:0;background:transparent;padding:9px 6px;border-radius:10px;font-weight:700;font-size:14px;color:var(--muted)}
+.seg.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.splits{background:var(--card);border-radius:14px;padding:2px 12px}
+.srow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.srow:last-child{border-bottom:0}
+.srow>span:first-of-type{flex:1}
+.inwrap{display:flex;align-items:center;gap:6px;width:120px}.inwrap i{font-style:normal;color:var(--muted)}
+input.small{padding:8px 10px;text-align:right}
+.hint{font-size:14px;color:var(--muted);margin:8px 2px 0;min-height:20px}.hint.bad{color:var(--neg)}
+.err{color:var(--neg);font-size:14px;min-height:18px;margin:6px 2px}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}.actions .primary{flex:1;max-width:180px}
+.actions .danger{margin-right:auto}
+.linkbox{background:var(--card);border:1.5px dashed var(--line);border-radius:13px;padding:12px;font-size:14px;word-break:break-all;margin-bottom:12px;user-select:all}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:30;background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;font-size:14px;font-weight:500;max-width:90vw;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);animation:fade .15s}
+.skel{height:74px;border-radius:var(--r);background:linear-gradient(90deg,#EDE6DC,#F6F1EA,#EDE6DC);background-size:200% 100%;animation:sh 1.2s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.install{display:flex;gap:10px;align-items:center;padding:12px 14px;margin-top:14px;font-size:14px;color:var(--muted)}
+</style>
+</head><body><div id="root"></div><div id="toast"></div>
+<script>
+(function(){
+'use strict';
+var CUR=['CAD','USD','INR','EUR','GBP','AUD','SGD','AED'];
+var LS_LIST='whoowes-groups',LS_ME='whoowes-me';
+var cache={}, loading={}, notFound={}, sheet=null, armForget=null, homeState='idle', toastT=null;
+var myIds=lsGet(LS_LIST,[]), me=lsGet(LS_ME,{});
+
+/* ---------- helpers ---------- */
+function lsGet(k,d){try{var v=JSON.parse(localStorage.getItem(k)||'null');return v==null?d:v}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function uid(){var a='abcdefghijklmnopqrstuvwxyz0123456789',s='',r=new Uint8Array(10);(window.crypto||{getRandomValues:function(x){for(var i=0;i<x.length;i++)x[i]=Math.random()*256;return x}}).getRandomValues(r);for(var i=0;i<r.length;i++)s+=a[r[i]%36];return s}
+function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function money(c,cur){try{return new Intl.NumberFormat(undefined,{style:'currency',currency:cur}).format(c/100)}catch(e){return (c/100).toFixed(2)}}
+function toCents(v){var n=parseFloat(String(v).replace(/[^0-9.\-]/g,''));return isFinite(n)?Math.round(n*100):NaN}
+function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fmtDate(s){try{return new Date(s+'T00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}catch(e){return s}}
+function initial(n){return esc((String(n).trim()[0]||'?').toUpperCase())}
+function has(o,k){return Object.prototype.hasOwnProperty.call(o,k)}
+function toast(t){var el=document.getElementById('toast');el.innerHTML='<div class="toast">'+esc(t)+'</div>';clearTimeout(toastT);toastT=setTimeout(function(){el.innerHTML=''},2600)}
+var ICONS=[[/food|dinner|lunch|breakfast|brunch|restaurant|pizza|cafe|coffee|grocer|meal|snack|drinks?|beer|wine|sushi|biryani/i,'🍽️'],[/uber|lyft|taxi|cab|gas|fuel|train|bus|flight|parking|metro|rental car|toll/i,'🚗'],[/hotel|airbnb|rent|stay|lodg|cabin/i,'🏠'],[/movie|ticket|concert|game|show|event|museum/i,'🎟️'],[/wifi|internet|hydro|electric|bill|utilit|phone|water/i,'💡'],[/shop|gift|clothes|store|amazon/i,'🛍️']];
+function icon(d){for(var i=0;i<ICONS.length;i++)if(ICONS[i][0].test(d))return ICONS[i][1];return '🧾'}
+
+/* ---------- math ---------- */
+function balances(g){var b={};g.members.forEach(function(m){b[m.id]=0});g.expenses.forEach(function(e){b[e.paidBy]=(b[e.paidBy]||0)+e.amount;for(var k in e.splits)b[k]=(b[k]||0)-e.splits[k]});return b}
+function simplify(b){
+  var cr=[],db=[];for(var k in b){if(b[k]>0)cr.push([k,b[k]]);else if(b[k]<0)db.push([k,-b[k]])}
+  cr.sort(function(a,c){return c[1]-a[1]});db.sort(function(a,c){return c[1]-a[1]});
+  var out=[],i=0,j=0;
+  while(i<db.length&&j<cr.length){var x=Math.min(db[i][1],cr[j][1]);if(x>0)out.push({from:db[i][0],to:cr[j][0],amount:x});db[i][1]-=x;cr[j][1]-=x;if(db[i][1]===0)i++;if(cr[j][1]===0)j++}
+  return out;
+}
+function spent(g){return g.expenses.reduce(function(a,e){return a+(e.type==='payment'?0:e.amount)},0)}
+function used(g,mid){return g.expenses.some(function(e){return e.paidBy===mid||has(e.splits,mid)})}
+function myBal(g){var id=me[g.id];if(!id||!g.members.some(function(m){return m.id===id}))return null;return balances(g)[id]||0}
+function computeSplits(g,d,amount){
+  var ids=g.members.map(function(m){return m.id}),sp={};
+  if(d.mode==='equal'){
+    var on=ids.filter(function(id){return d.equal[id]});
+    if(!on.length)return{error:'Pick at least one person to split with.'};
+    var base=Math.floor(amount/on.length),rem=amount-base*on.length;
+    on.forEach(function(id,i){sp[id]=base+(i<rem?1:0)});return{splits:sp};
+  }
+  if(d.mode==='exact'){
+    var sum=0;ids.forEach(function(id){var c=toCents(d.exact[id]||0);if(c>0){sp[id]=c;sum+=c}});
+    if(sum!==amount)return{error:'Exact amounts add up to '+money(sum,g.currency)+', not '+money(amount,g.currency)+'.'};
+    return{splits:sp};
+  }
+  var tot=0,ps=[];ids.forEach(function(id){var p=parseFloat(d.pct[id]||0);if(p>0){ps.push([id,p]);tot+=p}});
+  if(Math.abs(tot-100)>0.01)return{error:'Percentages add up to '+(+tot.toFixed(2))+'%, not 100%.'};
+  var acc=0;ps.forEach(function(x,i){var c=i===ps.length-1?amount-acc:Math.round(amount*x[1]/100);sp[x[0]]=c;acc+=c});
+  return{splits:sp};
+}
+
+/* ---------- server ---------- */
+function api(path,body){
+  return fetch(path,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined,cache:'no-store'})
+    .then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok){var e=new Error(j.error||'Could not reach the server.');e.status=r.status;throw e}return j})},
+          function(){throw new Error('You seem to be offline. Check your connection.')});
+}
+function rememberId(id){if(myIds.indexOf(id)<0){myIds.unshift(id);lsSet(LS_LIST,myIds)}}
+function loadGroup(id){
+  if(loading[id])return loading[id];
+  loading[id]=api('/api/group?id='+encodeURIComponent(id)).then(function(g){
+    var old=cache[id];cache[id]=g;delete notFound[id];rememberId(id);delete loading[id];return !old||old.v!==g.v;
+  },function(e){delete loading[id];if(e.status===404){notFound[id]=true;delete cache[id]}throw e});
+  return loading[id];
+}
+function loadHome(){
+  if(!myIds.length){homeState='done';return}
+  homeState='loading';
+  api('/api/groups?ids='+myIds.join(',')).then(function(r){
+    var found={};r.groups.forEach(function(g){cache[g.id]=g;found[g.id]=1});
+    myIds=myIds.filter(function(id){return found[id]});lsSet(LS_LIST,myIds);
+    homeState='done';if(!route().gid)render();
+  },function(e){homeState='error';toast(e.message);if(!route().gid)render()});
+}
+function mutate(g,op,optimistic){
+  if(optimistic){optimistic(g);render()}
+  return api('/api/group',{id:g.id,op:op}).then(function(n){cache[g.id]=n;render();return n},function(e){
+    toast(e.message||'Could not save.');loadGroup(g.id).then(render,render);throw e});
+}
+
+/* ---------- routing ---------- */
+function route(){var m=location.hash.slice(1).match(/^g-([a-z0-9]+)(?:-(activity|balances|settle|people))?$/);return m?{gid:m[1],tab:m[2]||'activity'}:{gid:null}}
+function go(h){if(location.hash.slice(1)===h)render();else location.hash=h}
+window.addEventListener('hashchange',function(){sheet=null;armForget=null;var r=route();if(!r.gid)loadHome();render();window.scrollTo(0,0)});
+
+/* ---------- views ---------- */
+function shareLink(g){return location.origin+location.pathname+'#g-'+g.id}
+function viewHome(){
+  var h='<header class="top"><div class="brand"><span class="logo">≈</span>WhoOwes</div></header><main class="wrap">';
+  h+='<section class="hero"><h1>Split costs,<br>stay friends.</h1><p>Track shared expenses for trips, roommates and dinners. Add friends with a link, and everyone sees the same balances.</p></section>';
+  var gs=myIds.map(function(id){return cache[id]}).filter(Boolean);
+  if(gs.length){
+    h+='<div class="list">'+gs.map(function(g){
+      var mb=myBal(g),open=simplify(balances(g)).length,pill;
+      if(mb==null)pill=open?'<div class="pill warn">'+open+' to settle</div>':'<div class="pill ok">Settled</div>';
+      else if(mb>0)pill='<div class="pill ok">you get '+money(mb,g.currency)+'</div>';
+      else if(mb<0)pill='<div class="pill warn">you owe '+money(-mb,g.currency)+'</div>';
+      else pill='<div class="pill plain">settled</div>';
+      return '<button class="card gcard" data-act="open" data-id="'+g.id+'"><div class="gav">'+initial(g.name)+'</div><div class="gmain"><div class="gname">'+esc(g.name)+'</div><div class="muted">'+g.members.length+' people · '+money(spent(g),g.currency)+' spent</div></div>'+pill+'</button>'}).join('')+'</div>';
+  }else if(homeState==='loading'||(homeState==='idle'&&myIds.length)){
+    h+='<div class="list"><div class="skel"></div><div class="skel"></div></div>';
+  }else{
+    h+='<div class="empty card"><div class="big">👋</div><p>No groups yet. Make one for your next trip, your flat, or a night out. If a friend sent you a link, open it and the group will show up here.</p></div>';
+  }
+  if(!isStandalone())h+='<div class="card install">📲<span>Add WhoOwes to your home screen: on iPhone tap <b>Share → Add to Home Screen</b>; on Android tap <b>⋮ → Install app</b>.</span></div>';
+  h+='</main><button class="fab" data-act="newGroup">+ New group</button>';
+  return h;
+}
+function isStandalone(){try{return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}}
+function mname(g,id){var m=g.members.find(function(x){return x.id===id});return esc(m?m.name:'Someone')}
+function viewLoading(r){
+  if(notFound[r.gid])return '<header class="top bordered"><button class="iconbtn" data-act="home" aria-label="Back">←</button><div class="title">Not found</div></header><main class="wrap"><div class="card note" style="margin-top:16px">This group doesn’t exist, or the link is incomplete. Ask your friend to send the link again.</div><button class="btn primary wide" data-act="home">Go to my groups</button></main>';
+  if(!loading[r.gid])loadGroup(r.gid).then(render,function(e){if(e.status!==404)toast(e.message);render()});
+  return '<header class="top bordered"><button class="iconbtn" data-act="home" aria-label="Back">←</button><div class="title">Loading…</div></header><main class="wrap"><div class="list" style="margin-top:12px"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div></main>';
+}
+function viewGroup(g,t){
+  var b=balances(g),xs=simplify(b),mid=me[g.id],mb=myBal(g);
+  var h='<header class="top bordered"><button class="iconbtn" data-act="home" aria-label="Back">←</button><div class="title">'+esc(g.name)+'</div><button class="iconbtn" data-act="share">＋ Invite</button></header>';
+  h+='<main class="wrap"><div class="summary"><div class="card stat"><div class="k">Total spent</div><div class="v">'+money(spent(g),g.currency)+'</div></div>';
+  if(mb!=null)h+='<div class="card stat"><div class="k">Your balance</div><div class="v '+(mb>0?'pos':mb<0?'neg':'')+'">'+(mb>0?'+':mb<0?'−':'')+money(Math.abs(mb),g.currency)+'</div></div></div>';
+  else h+='<div class="card stat"><div class="k">To settle</div><div class="v">'+(xs.length?xs.length+' payment'+(xs.length>1?'s':''):'All square')+'</div></div></div>';
+  if(mb==null)h+='<div class="card whoami"><p>Which one are you?</p><div class="chips">'+g.members.map(function(m){return '<button class="chip" data-act="setMe" data-id="'+m.id+'">'+esc(m.name)+'</button>'}).join('')+'</div></div>';
+  h+='<nav class="tabs">'+[['activity','Activity'],['balances','Balances'],['settle','Settle up'],['people','People']].map(function(x){return '<button class="tab '+(t===x[0]?'on':'')+'" data-act="tab" data-tab="'+x[0]+'">'+x[1]+'</button>'}).join('')+'</nav>';
+  if(t==='activity'){
+    var ex=g.expenses.slice().sort(function(a,c){return a.date===c.date?c.created-a.created:(a.date<c.date?1:-1)});
+    if(!ex.length)h+='<div class="card note">'+(g.members.length<2?'Add at least two people under <b>People</b>, then add your first expense.':'Nothing here yet. Tap <b>Add expense</b> to log the first one, or <b>Invite</b> friends so they can add theirs.')+'</div>';
+    else{var last=null;ex.forEach(function(e){
+      if(e.date!==last){if(last!==null)h+='</div>';h+='<div class="dayh">'+esc(fmtDate(e.date))+'</div><div class="card rows">';last=e.date}
+      if(e.type==='payment'){var to=Object.keys(e.splits)[0];h+='<button class="row pay" data-act="editExp" data-id="'+e.id+'"><span class="ico">💸</span><span class="rmain"><span class="rtitle">'+mname(g,e.paidBy)+' paid '+mname(g,to)+'</span><span class="muted">Payment</span></span><span class="ramt pos">'+money(e.amount,g.currency)+'</span></button>'}
+      else{
+        var n=Object.keys(e.splits).length,mine='';
+        if(mid){var share=e.splits[mid]||0,net=(e.paidBy===mid?e.amount:0)-share;
+          mine=net>0?'<small class="pos">you lent '+money(net,g.currency)+'</small>':net<0?'<small class="neg">you owe '+money(-net,g.currency)+'</small>':'<small class="muted">not involved</small>';
+          if(net===0&&e.paidBy===mid)mine='<small class="muted">just you</small>';}
+        h+='<button class="row" data-act="editExp" data-id="'+e.id+'"><span class="ico">'+icon(e.desc)+'</span><span class="rmain"><span class="rtitle">'+esc(e.desc)+'</span><span class="muted">'+(e.paidBy===mid?'You':mname(g,e.paidBy))+' paid · split '+n+' way'+(n>1?'s':'')+'</span></span><span class="ramt">'+money(e.amount,g.currency)+mine+'</span></button>'}
+    });h+='</div>'}
+  }else if(t==='balances'){
+    var mx=1;g.members.forEach(function(m){mx=Math.max(mx,Math.abs(b[m.id]||0))});
+    h+='<div class="card">'+g.members.map(function(m){var v=b[m.id]||0;var lbl=v>0?'<span class="pos">gets back '+money(v,g.currency)+'</span>':v<0?'<span class="neg">owes '+money(-v,g.currency)+'</span>':'<span class="muted">settled up</span>';
+      return '<div class="bal"><div class="av">'+initial(m.name)+'</div><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(m.name)+(m.id===mid?'<span class="you">you</span>':'')+'</b>'+lbl+'</div><div class="bar"><b style="width:'+Math.round(Math.abs(v)/mx*100)+'%;background:'+(v>=0?'var(--pos)':'var(--neg)')+'"></b></div></div></div>'}).join('')+'</div>';
+  }else if(t==='settle'){
+    if(!xs.length)h+='<div class="card note">🎉 Everyone is square. Nothing to settle.</div>';
+    else h+='<div class="card">'+xs.map(function(x){return '<div class="xfer"><div class="av">'+initial(mname(g,x.from))+'</div><div class="who"><b>'+(x.from===mid?'You':mname(g,x.from))+'</b> '+(x.from===mid?'pay':'pays')+' <b>'+(x.to===mid?'you':mname(g,x.to))+'</b><div style="font-weight:700;font-size:18px">'+money(x.amount,g.currency)+'</div></div><button class="btn small primary" data-act="settle" data-from="'+x.from+'" data-to="'+x.to+'" data-amt="'+x.amount+'">Mark paid</button></div>'}).join('')+'</div><p class="muted" style="margin:10px 4px">This is the fewest payments that clears every debt in the group.</p>';
+    if(g.members.length>1)h+='<button class="btn ghost wide" data-act="payment">Record a different payment</button>';
+  }else{
+    h+='<div class="section"><h3>People</h3><div class="card">'+g.members.map(function(m){return '<div class="bal"><div class="av">'+initial(m.name)+'</div><b style="flex:1">'+esc(m.name)+(m.id===mid?'<span class="you">you</span>':'')+'</b>'+(m.id!==mid?'<button class="btn small ghost" data-act="setMe" data-id="'+m.id+'">This is me</button>':'')+(used(g,m.id)?'':'<button class="btn small ghost danger" data-act="rmMember" data-id="'+m.id+'">Remove</button>')+'</div>'}).join('')+
+      '<form class="inline" data-form="addMember"><input name="name" placeholder="Add a person" maxlength="40" required><button class="btn primary small">Add</button></form></div></div>';
+    h+='<div class="section"><h3>Group settings</h3><form class="card" style="padding:14px" data-form="groupSettings"><label class="fld"><span>Group name</span><input name="name" value="'+esc(g.name)+'" maxlength="50" required></label><label class="fld"><span>Currency</span><select name="currency">'+CUR.map(function(c){return '<option '+(c===g.currency?'selected':'')+'>'+c+'</option>'}).join('')+'</select></label><button class="btn primary" style="width:100%">Save changes</button></form></div>';
+    h+='<div class="section"><button class="btn ghost danger wide" data-act="forget">'+(armForget===g.id?'Tap again to remove it from this phone':'Remove group from this phone')+'</button><p class="muted" style="margin:8px 4px">This only hides it on this phone. Friends keep the group, and you can open the link again anytime.</p></div>';
+  }
+  h+='</main>';
+  if((t==='activity'||t==='balances')&&g.members.length>1)h+='<button class="fab" data-act="addExp">+ Add expense</button>';
+  return h;
+}
+
+/* ---------- sheets ---------- */
+function opts(g,sel){return g.members.map(function(m){return '<option value="'+m.id+'" '+(m.id===sel?'selected':'')+'>'+esc(m.name)+'</option>'}).join('')}
+function sheetHTML(g){
+  if(!sheet)return '';var inner='';
+  if(sheet.kind==='newGroup'){
+    inner='<form data-form="newGroup"><h2>New group</h2><label class="fld"><span>Group name</span><input name="name" placeholder="e.g. Montreal weekend" maxlength="50" required></label><label class="fld"><span>People, including you (one per line or comma-separated)</span><textarea name="people" rows="4" placeholder="Suraj, Priya, Alex"></textarea></label><label class="fld"><span>Currency</span><select name="currency">'+CUR.map(function(c){return '<option>'+c+'</option>'}).join('')+'</select></label><div class="err" id="err"></div><div class="actions"><button type="button" class="btn ghost" data-act="close">Cancel</button><button class="btn primary" '+(sheet.busy?'disabled':'')+'>'+(sheet.busy?'Creating…':'Create')+'</button></div></form>';
+  }else if(sheet.kind==='share'){
+    var url=shareLink(g);
+    inner='<h2>Invite friends</h2><p class="muted" style="margin-top:-6px">Send this link to the group. Anyone who has it can see and add expenses, so share it only with the people in the group.</p><div class="linkbox">'+esc(url)+'</div><div class="actions">'+(navigator.share?'<button class="btn ghost" data-act="nativeShare">Share…</button>':'')+'<button class="btn primary" data-act="copyLink">Copy link</button></div>';
+  }else if(sheet.kind==='expense'){
+    var d=sheet.d;
+    var seg=['equal','exact','percent'].map(function(m){return '<button type="button" class="seg '+(d.mode===m?'on':'')+'" data-act="mode" data-mode="'+m+'">'+{equal:'Equally',exact:'Exact',percent:'Percent'}[m]+'</button>'}).join('');
+    var rows=g.members.map(function(m){
+      if(d.mode==='equal')return '<label class="srow"><input type="checkbox" data-m="'+m.id+'" '+(d.equal[m.id]?'checked':'')+'><span>'+esc(m.name)+'</span><span class="muted" data-sh="'+m.id+'"></span></label>';
+      var src=d.mode==='exact'?d.exact:d.pct;
+      return '<label class="srow"><span>'+esc(m.name)+'</span><span class="inwrap"><input class="small" inputmode="decimal" data-m="'+m.id+'" value="'+esc(src[m.id]||'')+'" placeholder="0">'+(d.mode==='percent'?'<i>%</i>':'')+'</span></label>'}).join('');
+    inner='<form id="expForm" data-form="expense"><h2>'+(d.id?'Edit expense':'Add expense')+'</h2>'+
+      '<label class="fld"><span>What was it for?</span><input name="desc" value="'+esc(d.desc)+'" placeholder="e.g. Dinner at Pai" maxlength="80"></label>'+
+      '<div class="two"><label class="fld"><span>Amount ('+g.currency+')</span><input name="amount" inputmode="decimal" value="'+esc(d.amount)+'" placeholder="0.00"></label><label class="fld"><span>Date</span><input type="date" name="date" value="'+esc(d.date)+'"></label></div>'+
+      '<label class="fld"><span>Paid by</span><select name="paidBy">'+opts(g,d.paidBy)+'</select></label>'+
+      '<div class="fld"><span>Split</span><div class="segs">'+seg+'</div></div><div class="splits">'+rows+'</div><div class="hint" id="hint"></div><div class="err" id="err"></div>'+
+      '<div class="actions">'+(d.id?'<button type="button" class="btn ghost danger" data-act="delExp">'+(sheet.armed?'Tap again':'Delete')+'</button>':'')+'<button type="button" class="btn ghost" data-act="close">Cancel</button><button class="btn primary">Save</button></div></form>';
+  }else if(sheet.kind==='payment'){
+    var p=sheet.d;
+    inner='<form data-form="payment"><h2>'+(p.id?'Edit payment':'Record a payment')+'</h2><div class="two" style="grid-template-columns:1fr 1fr"><label class="fld"><span>From</span><select name="from">'+opts(g,p.from)+'</select></label><label class="fld"><span>To</span><select name="to">'+opts(g,p.to)+'</select></label></div>'+
+      '<div class="two"><label class="fld"><span>Amount ('+g.currency+')</span><input name="amount" inputmode="decimal" value="'+esc(p.amount)+'" placeholder="0.00"></label><label class="fld"><span>Date</span><input type="date" name="date" value="'+esc(p.date)+'"></label></div><div class="err" id="err"></div>'+
+      '<div class="actions">'+(p.id?'<button type="button" class="btn ghost danger" data-act="delExp">'+(sheet.armed?'Tap again':'Delete')+'</button>':'')+'<button type="button" class="btn ghost" data-act="close">Cancel</button><button class="btn primary">Save</button></div></form>';
+  }
+  return '<div class="overlay" data-act="overlay"><div class="sheet"><div class="grab"></div>'+inner+'</div></div>';
+}
+function syncDraft(){
+  var f=document.getElementById('expForm');if(!f||!sheet||sheet.kind!=='expense')return;var d=sheet.d;
+  d.desc=f.desc.value;d.amount=f.amount.value;d.date=f.date.value;d.paidBy=f.paidBy.value;
+  f.querySelectorAll('[data-m]').forEach(function(i){var id=i.dataset.m;if(d.mode==='equal')d.equal[id]=i.checked;else (d.mode==='exact'?d.exact:d.pct)[id]=i.value});
+}
+function updateHint(){
+  var el=document.getElementById('hint'),g=cur();if(!el||!g||!sheet||sheet.kind!=='expense')return;
+  var d=sheet.d,amt=toCents(d.amount)||0,txt='',bad=false;
+  if(d.mode==='equal'){
+    var on=g.members.filter(function(m){return d.equal[m.id]});
+    var res=amt>0&&on.length?computeSplits(g,d,amt).splits:{};
+    document.querySelectorAll('[data-sh]').forEach(function(s){s.textContent=res[s.dataset.sh]!=null?money(res[s.dataset.sh],g.currency):''});
+    txt=on.length?(amt>0?'Split '+on.length+' ways':'Choose who shares this'):'Nobody selected';bad=!on.length;
+  }else if(d.mode==='exact'){
+    var sum=0;g.members.forEach(function(m){var c=toCents(d.exact[m.id]||0);if(c>0)sum+=c});
+    var left=amt-sum;txt=money(sum,g.currency)+' of '+money(amt,g.currency)+' · '+(left===0?'all assigned ✓':money(Math.abs(left),g.currency)+(left>0?' left':' over'));bad=left!==0;
+  }else{
+    var t=0;g.members.forEach(function(m){var p=parseFloat(d.pct[m.id]||0);if(p>0)t+=p});
+    txt=(+t.toFixed(2))+'% of 100%'+(Math.abs(t-100)<=0.01?' ✓':'');bad=Math.abs(t-100)>0.01;
+  }
+  el.textContent=txt;el.className='hint'+(bad&&amt>0?' bad':'');
+}
+function openExpense(g,e){
+  var payer=me[g.id]&&g.members.some(function(m){return m.id===me[g.id]})?me[g.id]:g.members[0].id;
+  var d={mode:'equal',equal:{},exact:{},pct:{},desc:'',amount:'',date:today(),paidBy:payer};
+  if(e){d.id=e.id;d.desc=e.desc;d.amount=(e.amount/100).toFixed(2);d.date=e.date;d.paidBy=e.paidBy;d.mode=e.mode||'exact';
+    if(d.mode==='equal')Object.keys(e.splits).forEach(function(k){d.equal[k]=true});
+    else if(d.mode==='percent')d.pct=Object.assign({},e.pct||{});
+    if(d.mode==='exact')Object.keys(e.splits).forEach(function(k){d.exact[k]=(e.splits[k]/100).toFixed(2)});
+  }else g.members.forEach(function(m){d.equal[m.id]=true});
+  sheet={kind:'expense',d:d};render();
+  if(!e)setTimeout(function(){var i=document.querySelector('#expForm [name=desc]');if(i)i.focus()},60);
+}
+function setErr(t){var el=document.getElementById('err');if(el)el.textContent=t}
+function cur(){var r=route();return r.gid?cache[r.gid]:null}
+function upsert(g,e){var i=g.expenses.findIndex(function(x){return x.id===e.id});if(i>=0){e.created=g.expenses[i].created;g.expenses[i]=e}else g.expenses.push(e)}
+
+/* ---------- actions ---------- */
+var A={
+  home:function(){go('')},
+  open:function(el){go('g-'+el.dataset.id)},
+  tab:function(el){var g=cur();go('g-'+g.id+(el.dataset.tab==='activity'?'':'-'+el.dataset.tab))},
+  newGroup:function(){sheet={kind:'newGroup'};render();setTimeout(function(){var i=document.querySelector('[name=name]');if(i)i.focus()},60)},
+  close:function(){sheet=null;render()},
+  overlay:function(el,ev){if(ev.target===el){sheet=null;render()}},
+  share:function(){sheet={kind:'share'};render()},
+  copyLink:function(){var g=cur(),url=shareLink(g);
+    var done=function(){toast('Link copied. Paste it in your group chat.')};
+    try{navigator.clipboard.writeText(url).then(done,function(){toast('Press and hold the link to copy it.')})}catch(e){toast('Press and hold the link to copy it.')}},
+  nativeShare:function(){var g=cur();try{navigator.share({title:g.name+' on WhoOwes',text:'Join "'+g.name+'" on WhoOwes to split our expenses:',url:shareLink(g)}).catch(function(){})}catch(e){}},
+  setMe:function(el){var g=cur();me[g.id]=el.dataset.id;lsSet(LS_ME,me);render()},
+  addExp:function(){openExpense(cur())},
+  editExp:function(el){var g=cur(),e=g.expenses.find(function(x){return x.id===el.dataset.id});if(!e)return;
+    if(e.type==='payment'){sheet={kind:'payment',d:{id:e.id,from:e.paidBy,to:Object.keys(e.splits)[0],amount:(e.amount/100).toFixed(2),date:e.date}};render()}else openExpense(g,e)},
+  mode:function(el){syncDraft();sheet.d.mode=el.dataset.mode;render()},
+  delExp:function(){if(!sheet.armed){if(sheet.kind==='expense')syncDraft();sheet.armed=true;render();return}
+    var g=cur(),id=sheet.d.id;sheet=null;
+    mutate(g,{type:'deleteExpense',id:id},function(g){g.expenses=g.expenses.filter(function(x){return x.id!==id})}).catch(function(){})},
+  payment:function(){var g=cur(),from=me[g.id]||g.members[0].id,to=g.members.find(function(m){return m.id!==from}).id;sheet={kind:'payment',d:{from:from,to:to,amount:'',date:today()}};render()},
+  settle:function(el){sheet={kind:'payment',d:{from:el.dataset.from,to:el.dataset.to,amount:(+el.dataset.amt/100).toFixed(2),date:today()}};render()},
+  rmMember:function(el){var g=cur();mutate(g,{type:'removeMember',id:el.dataset.id}).catch(function(){})},
+  forget:function(){var g=cur();if(armForget!==g.id){armForget=g.id;render();return}
+    armForget=null;myIds=myIds.filter(function(x){return x!==g.id});lsSet(LS_LIST,myIds);delete me[g.id];lsSet(LS_ME,me);delete cache[g.id];go('')}
+};
+var F={
+  newGroup:function(f){
+    if(sheet.busy)return;
+    var name=f.name.value.trim(),ppl=f.people.value.split(/[\n,]+/).map(function(s){return s.trim()}).filter(Boolean);
+    if(!name)return setErr('Give the group a name.');
+    if(ppl.length<2)return setErr('Add at least two people.');
+    sheet.busy=true;render();
+    api('/api/groups',{name:name,people:ppl,currency:f.currency.value}).then(function(g){
+      cache[g.id]=g;rememberId(g.id);sheet=null;go('g-'+g.id);
+    },function(e){sheet.busy=false;render();setErr(e.message)});
+  },
+  expense:function(){
+    syncDraft();var g=cur(),d=sheet.d,amt=toCents(d.amount);
+    if(!d.desc.trim())return setErr('Say what the expense was for.');
+    if(!(amt>0))return setErr('Enter an amount above zero.');
+    var r=computeSplits(g,d,amt);if(r.error)return setErr(r.error);
+    var e={id:d.id||uid(),type:'expense',desc:d.desc.trim().slice(0,80),amount:amt,paidBy:d.paidBy,date:d.date||today(),splits:r.splits,mode:d.mode,created:Date.now()};
+    if(d.mode==='percent'){e.pct={};for(var k in d.pct)if(parseFloat(d.pct[k])>0)e.pct[k]=d.pct[k]}
+    sheet=null;
+    mutate(g,{type:'saveExpense',expense:e},function(g){upsert(g,JSON.parse(JSON.stringify(e)))}).catch(function(){});
+  },
+  payment:function(f){
+    var g=cur(),amt=toCents(f.amount.value),from=f.from.value,to=f.to.value;
+    if(from===to)return setErr('Pick two different people.');
+    if(!(amt>0))return setErr('Enter an amount above zero.');
+    var sp={};sp[to]=amt;
+    var e={id:sheet.d.id||uid(),type:'payment',desc:'Payment',amount:amt,paidBy:from,date:f.date.value||today(),splits:sp,created:Date.now()};
+    sheet=null;
+    var r=route();if(r.tab!=='activity')location.hash='g-'+g.id;
+    mutate(g,{type:'saveExpense',expense:e},function(g){upsert(g,JSON.parse(JSON.stringify(e)))}).then(function(){toast('Payment recorded.')},function(){});
+  },
+  addMember:function(f){var g=cur(),n=f.name.value.trim();if(!n)return;
+    mutate(g,{type:'addMember',name:n}).then(function(){toast(n+' added.')},function(){})},
+  groupSettings:function(f){var g=cur();mutate(g,{type:'updateGroup',name:f.name.value,currency:f.currency.value}).then(function(){toast('Saved.')},function(){})}
+};
+document.addEventListener('click',function(ev){var el=ev.target.closest('[data-act]');if(!el)return;var fn=A[el.dataset.act];if(!fn)return;
+  if(el.dataset.act==='overlay'&&ev.target!==el)return;
+  if(el.dataset.act!=='forget')armForget=null;
+  ev.preventDefault();fn(el,ev)});
+document.addEventListener('submit',function(ev){ev.preventDefault();var fn=F[ev.target.dataset.form];if(fn)fn(ev.target)});
+document.addEventListener('input',function(ev){if(ev.target.closest('#expForm')){syncDraft();updateHint()}});
+document.addEventListener('change',function(ev){if(ev.target.closest('#expForm')){syncDraft();updateHint()}});
+document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&sheet){sheet=null;render()}});
+
+/* ---------- live refresh: pick up friends' changes ---------- */
+function refresh(){
+  var r=route();if(document.visibilityState!=='visible'||sheet)return;
+  var a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;
+  if(r.gid&&cache[r.gid])loadGroup(r.gid).then(function(changed){if(changed&&!sheet)render()},function(){});
+  else if(!r.gid&&homeState!=='loading')loadHome();
+}
+setInterval(refresh,10000);
+document.addEventListener('visibilitychange',refresh);
+
+function render(){
+  var r=route(),root=document.getElementById('root'),g=r.gid?cache[r.gid]:null;
+  if(r.gid&&!g)root.innerHTML=viewLoading(r);
+  else root.innerHTML=(g?viewGroup(g,r.tab):viewHome())+(sheet&&(g||sheet.kind==='newGroup')?sheetHTML(g):'');
+  updateHint();
+}
+if(!route().gid)loadHome();
+render();
+if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});
+})();
+</script>
+</body></html>
